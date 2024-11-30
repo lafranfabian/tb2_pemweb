@@ -1,0 +1,31 @@
+/* Sidebar styling */
+.sidebar {
+    width: 250px;
+    min-height: 100vh;
+    position: fixed;
+  }
+  
+  /* Prevent overflowing numbers */
+  .card h3 {
+    font-size: 1.8rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  
+  /* Main content area */
+  main {
+    margin-left: 250px;
+  }
+  
+  /* Responsive behavior for small screens */
+  @media (max-width: 768px) {
+    .sidebar {
+      width: 100%;
+      position: relative;
+    }
+    main {
+      margin-left: 0;
+    }
+  }
+  
