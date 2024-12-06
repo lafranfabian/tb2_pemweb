@@ -11,9 +11,9 @@
 <body>
   <div class="d-flex">
     <!-- Sidebar -->
-    <nav class="sidebar bg-dark text-light p-3">
+    <nav class="sidebar bg-dark text-light d-flex flex-column p-3">
       <h4 class="mb-4">Mate</h4>
-      <ul class="nav flex-column">
+      <ul class="nav flex-column flex-grow-1">
         <li class="nav-item">
           <a href="#" class="nav-link text-light" id="dashboard-link">Dashboard</a>
         </li>
@@ -24,6 +24,7 @@
           <a href="#" class="nav-link text-light" id="customers-link">Customers</a>
         </li>
       </ul>
+      <button id="logout-btn" class="btn btn-outline-light mt-auto">Logout</button>
     </nav>
 
     <!-- Main Content -->

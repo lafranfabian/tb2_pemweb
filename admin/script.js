@@ -4,6 +4,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const dashboardLink = document.getElementById('dashboard-link');
   const articlesLink = document.getElementById('articles-link');
   const customersLink = document.getElementById('customers-link');
+  const logoutBtn = document.getElementById('logout-btn');
   const articlesTableBody = document.getElementById('articles-table-body');
 
   // Event listener for Dashboard link
@@ -27,6 +28,11 @@ document.addEventListener('DOMContentLoaded', () => {
   customersLink.addEventListener('click', (e) => {
     e.preventDefault();
     alert("Customers section clicked! You can add functionality here.");
+  });
+
+  // Logout functionality
+  logoutBtn.addEventListener('click', () => {
+    window.location.href = '../login.html'; // Redirect to login.html
   });
 
   // Remove user data (row) on '×' button click
