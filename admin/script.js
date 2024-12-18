@@ -1,80 +1,102 @@
 document.addEventListener('DOMContentLoaded', () => {
+  const SUPABASE_URL = 'https://ohwyindwhsfcnxjpwoch.supabase.co';
+  const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9od3lpbmR3aHNmY254anB3b2NoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzI3MjIxNDEsImV4cCI6MjA0ODI5ODE0MX0.AO5DNm7c0h6CTcxt-0EMyMII-sCiBl8jgiJHSx1ynpo';
+  const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
   const articlesSection = document.getElementById('articles-section');
-  const dashboardSection = document.getElementById('dashboard-section');
-  const dashboardLink = document.getElementById('dashboard-link');
-  const articlesLink = document.getElementById('articles-link');
-  const customersLink = document.getElementById('customers-link');
-  const logoutBtn = document.getElementById('logout-btn');
   const articlesTableBody = document.getElementById('articles-table-body');
+  const addArticleBtn = document.getElementById('add-article-btn');
+  const addArticleModal = new bootstrap.Modal(document.getElementById('add-article-modal'));
+  const addArticleForm = document.getElementById('add-article-form');
 
-  // Event listener for Dashboard link
-  dashboardLink.addEventListener('click', (e) => {
-    e.preventDefault();
-    articlesSection.style.display = 'none';
-    dashboardSection.style.display = 'block';
+  const articlesLink = document.getElementById('articles-link');
 
-    simulateTrafficData();
-    renderChart();
-  });
+  // Fetch and display articles
+  async function fetchArticles() {
+    const { data: articles, error } = await supabase
+      .from('articles')
+      .select('*')
+      .order('created_at', { ascending: false });
 
-  // Event listener for Articles link
-  articlesLink.addEventListener('click', (e) => {
-    e.preventDefault();
-    articlesSection.style.display = 'block';
-    dashboardSection.style.display = 'none';
-  });
-
-  // Event listener for Customers link
-  customersLink.addEventListener('click', (e) => {
-    e.preventDefault();
-    alert("Customers section clicked! You can add functionality here.");
-  });
-
-  // Logout functionality
-  logoutBtn.addEventListener('click', () => {
-    window.location.href = '../login.html'; // Redirect to login.html
-  });
-
-  // Remove user data (row) on '×' button click
-  articlesTableBody.addEventListener('click', (e) => {
-    if (e.target.classList.contains('remove-btn')) {
-      const row = e.target.closest('tr');
-      row.remove();
+    if (error) {
+      alert('Error fetching articles: ' + error.message);
+      return;
     }
-  });
 
-  // Simulated traffic stats
-  function simulateTrafficData() {
-    const activeUsers = document.getElementById('active-users');
-    const totalVisits = document.getElementById('total-visits');
-    const pageViews = document.getElementById('page-views');
-
-    activeUsers.textContent = Math.floor(Math.random() * 100 + 1);
-    totalVisits.textContent = Math.floor(Math.random() * 10000 + 5000);
-    pageViews.textContent = Math.floor(Math.random() * 20000 + 10000);
-  }
-
-  // Render chart
-  function renderChart() {
-    const ctx = document.getElementById('traffic-chart').getContext('2d');
-    new Chart(ctx, {
-      type: 'bar',
-      data: {
-        labels: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'],
-        datasets: [{
-          label: 'Visits',
-          data: [1200, 1500, 1800, 2000, 2500, 3000, 3200],
-          backgroundColor: 'rgba(54, 162, 235, 0.5)',
-          borderColor: 'rgba(54, 162, 235, 1)',
-          borderWidth: 1
-        }]
-      },
-      options: {
-        responsive: true,
-        scales: {
-          y: { beginAtZero: true }
-        }
-      }
+    // Populate the articles table
+    articlesTableBody.innerHTML = '';
+    articles.forEach((article) => {
+      const row = `
+        <tr>
+          <td>${article.id}</td>
+          <td>${article.title}</td>
+          <td>${article.content.substring(0, 50)}...</td>
+          <td>${article.image_url ? `<img src="${article.image_url}" width="50">` : 'No Image'}</td>
+          <td>${new Date(article.created_at).toLocaleDateString()}</td>
+          <td>
+            <button class="btn btn-sm btn-danger" onclick="deleteArticle(${article.id})">Delete</button>
+          </td>
+        </tr>`;
+      articlesTableBody.insertAdjacentHTML('beforeend', row);
     });
   }
+
+  // Add new article
+  addArticleForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+
+    const title = document.getElementById('article-title').value;
+    const content = document.getElementById('article-content').value;
+    const imageFile = document.getElementById('article-image').files[0];
+    let imageUrl = null;
+
+    if (imageFile) {
+      const { data, error } = await supabase.storage
+        .from('article-images')
+        .upload(`public/${Date.now()}-${imageFile.name}`, imageFile);
+
+      if (error) {
+        alert('Error uploading image: ' + error.message);
+        return;
+      }
+
+      imageUrl = `${SUPABASE_URL}/storage/v1/object/public/article-images/${data.path}`;
+    }
+
+    const { error: insertError } = await supabase
+      .from('articles')
+      .insert([{ title, content, image_url: imageUrl }]);
+
+    if (insertError) {
+      alert('Error adding article: ' + insertError.message);
+      return;
+    }
+
+    alert('Article added successfully!');
+    addArticleModal.hide();
+    fetchArticles(); // Reload articles
+    addArticleForm.reset();
+  });
+
+  // Delete article
+  window.deleteArticle = async (id) => {
+    const { error } = await supabase.from('articles').delete().eq('id', id);
+
+    if (error) {
+      alert('Error deleting article: ' + error.message);
+      return;
+    }
+
+    alert('Article deleted successfully!');
+    fetchArticles(); // Reload articles
+  };
+
+  // Show Articles section
+  articlesLink.addEventListener('click', () => {
+    articlesSection.style.display = 'block';
+    fetchArticles(); // Fetch articles when clicked
+  });
+
+  // Hide Articles section initially
+  articlesSection.style.display = 'none';
 });
