@@ -1,14 +1,6 @@
-
-const registerBtn = document.getElementById('register');
-const container = document.getElementById('container');
-const loginBtn = document.getElementById('login');
-registerBtn.addEventListener('click',()=>{
-    container.classList.add("active");
-})
-loginBtn.addEventListener('click',()=>{
-    container.classList.remove("active");
-})
 document.addEventListener('DOMContentLoaded', () => {
+  const API_URL = "http://localhost:3000"; // Backend server URL
+
   // Select forms and inputs
   const signUpForm = document.querySelector('.sign-up form');
   const signInForm = document.querySelector('.sign-in form');
@@ -18,9 +10,21 @@ document.addEventListener('DOMContentLoaded', () => {
   const emailInputSignIn = signInForm.querySelector('input[placeholder="Email"]');
   const passwordInputSignIn = signInForm.querySelector('input[placeholder="Password"]');
 
+  const registerBtn = document.getElementById('register');
+  const container = document.getElementById('container');
+  const loginBtn = document.getElementById('login');
+
+  // Toggle between Sign In and Sign Up forms
+  registerBtn.addEventListener('click', () => {
+    container.classList.add("active");
+  });
+  loginBtn.addEventListener('click', () => {
+    container.classList.remove("active");
+  });
+
   // Sign Up Logic
-  signUpForm.addEventListener('submit', (event) => {
-    event.preventDefault(); // Prevent form submission
+  signUpForm.addEventListener('submit', async (event) => {
+    event.preventDefault(); // Prevent default form submission
 
     const name = nameInput.value.trim();
     const email = emailInputSignUp.value.trim();
@@ -31,27 +35,29 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
 
-    // Save user data to localStorage
-    const users = JSON.parse(localStorage.getItem('users')) || [];
-    const newUser = { name, email, password };
+    try {
+      const response = await fetch(`${API_URL}/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, email, password, isSignup: true }), // Pass isSignup flag
+      });
 
-    // Check if the email is already registered
-    const existingUser = users.find(user => user.email === email);
-    if (existingUser) {
-      alert('This email is already registered. Please use a different email.');
-      return;
+      const result = await response.json();
+      if (response.ok) {
+        alert('Sign Up successful! Redirecting to homepage...');
+        window.location.href = 'home.html'; // Redirect to homepage
+      } else {
+        alert(`Sign Up failed: ${result.error || 'Unknown error'}`);
+      }
+    } catch (error) {
+      console.error('Error during Sign Up:', error);
+      alert('An error occurred. Please try again later.');
     }
-
-    users.push(newUser);
-    localStorage.setItem('users', JSON.stringify(users));
-
-    alert('Sign Up successful! Redirecting to homepage...');
-    window.location.href = 'home.html'; // Redirect to homepage
   });
 
   // Sign In Logic
-  signInForm.addEventListener('submit', (event) => {
-    event.preventDefault(); // Prevent form submission
+  signInForm.addEventListener('submit', async (event) => {
+    event.preventDefault(); // Prevent default form submission
 
     const email = emailInputSignIn.value.trim();
     const password = passwordInputSignIn.value.trim();
@@ -61,22 +67,30 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
 
-    // Admin Login Check
-    if (email === 'admin@gmail.com' && password === 'admin123') {
-      alert('Welcome, Admin! Redirecting to Admin Dashboard...');
-      window.location.href = './admin/index.html'; // Redirect admin to admin dashboard
-      return;
-    }
+    try {
+      const response = await fetch(`${API_URL}/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password, isSignup: false }), // Pass isSignup flag
+      });
 
-    // Retrieve users from localStorage
-    const users = JSON.parse(localStorage.getItem('users')) || [];
-    const matchingUser = users.find(user => user.email === email && user.password === password);
+      const result = await response.json();
+      if (response.ok) {
+        const { isAdmin, name } = result;
 
-    if (matchingUser) {
-      alert(`Welcome back, ${matchingUser.name}! Redirecting to homepage...`);
-      window.location.href = 'home.html'; // Redirect to homepage
-    } else {
-      alert('Invalid email or password. Please try again.');
+        if (isAdmin) {
+          alert('Welcome, Admin! Redirecting to Admin Dashboard...');
+          window.location.href = './admin/index.html'; // Redirect to admin dashboard
+        } else {
+          alert(`Welcome back, ${name}! Redirecting to homepage...`);
+          window.location.href = 'home.html'; // Redirect to homepage
+        }
+      } else {
+        alert(`Sign In failed: ${result.error || 'Invalid email or password'}`);
+      }
+    } catch (error) {
+      console.error('Error during Sign In:', error);
+      alert('An error occurred. Please try again later.');
     }
   });
 });
